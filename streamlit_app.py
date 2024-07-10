@@ -91,8 +91,13 @@ st.set_page_config(
     page_title="阪大食堂メニュー推薦",
     page_icon="🍽️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state=st.session_state.get('sidebar_state', 'expanded')
 )
+
+if 'result' not in st.session_state: 
+	st.session_state.result = pd.DataFrame()
+
+st.session_state.sidebar_state = 'expanded'
 
 st.sidebar.title("食堂メニュー推薦ツール")
 
@@ -109,14 +114,19 @@ pushed = st.sidebar.button('決定', key=0)
 
 if pushed :
     if place_name == '(未選択)' :
-        st.error('食堂が選択されていません')
+        st.sidebar.error('食堂が選択されていません')
     else :
         place_id = get_place(place_name)
         allergy_list = get_allergy_list(allergy)
         status, result_df = MenuProblem(place_id, calorie, allergy_list).solve()
 
         if status == -1 :
-            st.exception(Exception('条件を満たすメニューが見つかりませんでした'))
+            st.sidebar.exception(Exception('条件を満たすメニューが見つかりませんでした'))
         else :
-            st.success('メニューが見つかりました')
-            st.dataframe(result_df)
+            st.session_state.result = result_df
+            st.session_state.sidebar_state = 'collapsed'
+            st.rerun()
+
+if not st.session_state.result.empty: 
+    st.success('メニューが見つかりました')
+    st.dataframe(st.session_state.result)
