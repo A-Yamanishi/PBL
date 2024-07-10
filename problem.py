@@ -1,3 +1,6 @@
+import sys
+sys.path.append('C:/Users/ajpjdm/AppData/Local/Programs/Python/Python312/Lib/site-packages')
+
 import pulp
 import pandas as pd
 
@@ -8,9 +11,9 @@ class MenuProblem:
         self.target = target
         self.allergy = allergy
 
-        self.f_df = pd.read_csv("foods.csv", encoding="utf-8_sig")
-        self.c_df = pd.read_csv("categories.csv", encoding="utf-8_sig")
-        self.a_df = pd.read_csv("allergy.csv", encoding="utf-8_sig")
+        self.f_df = pd.read_csv("./foods.csv", encoding="utf-8_sig")
+        self.c_df = pd.read_csv("./categories.csv", encoding="utf-8_sig")
+        self.a_df = pd.read_csv("./allergy.csv", encoding="utf-8_sig")
 
         self.f_p_df = self.f_df[self.f_df.place==self.place]
 
