@@ -1,6 +1,3 @@
-import sys
-sys.path.append('C:/Users/ajpjdm/AppData/Local/Programs/Python/Python312/Lib/site-packages')
-
 import pulp
 import pandas as pd
 
