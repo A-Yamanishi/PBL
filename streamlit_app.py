@@ -115,6 +115,7 @@ pushed = st.sidebar.button('決定', key=0)
 if pushed :
     if place_name == '(未選択)' :
         st.sidebar.error('食堂が選択されていません')
+        st.session_state.result = pd.DataFrame()
     else :
         place_id = get_place(place_name)
         allergy_list = get_allergy_list(allergy)
@@ -122,6 +123,7 @@ if pushed :
 
         if status == -1 :
             st.sidebar.exception(Exception('条件を満たすメニューが見つかりませんでした'))
+            st.session_state.result = pd.DataFrame()
         else :
             st.session_state.result = result_df
             st.session_state.sidebar_state = 'collapsed'
