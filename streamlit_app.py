@@ -130,5 +130,15 @@ if pushed :
             st.rerun()
 
 if not st.session_state.result.empty: 
+    df = st.session_state.result
     st.success('メニューが見つかりました')
+    st.divider()
+
+    st.header('メニュー')
     st.dataframe(st.session_state.result)
+    e_sum = 0
+    for tuples in df.itertuples():
+        e_sum += tuples.energy
+    st.markdown('**合計カロリー: ' + str(e_sum) + ' (kcal)**')
+
+    st.divider()
