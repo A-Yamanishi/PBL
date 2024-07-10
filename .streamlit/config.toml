@@ -1,2 +1,10 @@
 [client]
+showErrorDetails = false
 toolbarMode = "minimal"
+
+[theme]
+base="light"
+primaryColor="#004a55"
+backgroundColor="#fafafa"
+textColor="#222"
+font="sans serif"
