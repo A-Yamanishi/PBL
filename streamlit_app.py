@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-import const
 from problem import MenuProblem
 
 def get_place(p) :
@@ -87,6 +86,13 @@ def get_allergy_list(a) :
         a_list[d[a_name]] = 1
     
     return a_list
+
+st.set_page_config(
+    page_title="阪大食堂メニュー推薦",
+    page_icon="🍽️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 st.sidebar.title("食堂メニュー推薦ツール")
 
