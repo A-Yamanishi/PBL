@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
+import const
 from problem import MenuProblem
 
 def get_place(p) :
@@ -87,6 +88,7 @@ def get_allergy_list(a) :
     
     return a_list
 
+st.markdown(const.HIDE_ST_STYLE, unsafe_allow_html=True)
 st.sidebar.title("食堂メニュー推薦ツール")
 
 place_name = st.sidebar.selectbox('食堂を選択してください', ['(未選択)', 'カフェテリアレインボー', '豊中図書館下食堂', '工学部食堂ファミール', 'カフェテリアかさね', '福利会館3階食堂', 'Kitchen BISYOKU', 'カフェテリア匠'])
@@ -107,7 +109,6 @@ if pushed :
         place_id = get_place(place_name)
         allergy_list = get_allergy_list(allergy)
         status, result_df = MenuProblem(place_id, calorie, allergy_list).solve()
-        st.text(allergy_list)
 
         if status == -1 :
             st.exception(Exception('条件を満たすメニューが見つかりませんでした'))
