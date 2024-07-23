@@ -315,7 +315,7 @@ if 'data' not in st.session_state:
 
 st.session_state.sidebar_state = 'expanded'
 
-st.sidebar.title("食堂メニュー推薦ツール")
+st.sidebar.title("食堂メニュー推薦ツールv2")
 st.sidebar.divider()
 
 place_name = st.sidebar.selectbox('食堂を選択してください', ['(未選択)', 'カフェテリアレインボー', '豊中図書館下食堂', '工学部食堂ファミール', 'カフェテリアかさね', '福利会館3階食堂', 'Kitchen BISYOKU', 'カフェテリア匠'])
