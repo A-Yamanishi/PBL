@@ -179,7 +179,7 @@ def show_result(result_df, data) :
 
         fig.update_layout(
             autosize=True,
-            title_text="総合スコア",
+            title_text="総合スコア", 
             title_font_size=30,
             title_x=0,
         )
@@ -269,7 +269,8 @@ def show_result(result_df, data) :
                 marker_cornerradius=10,
                 orientation='h',
                 marker_opacity=0.8,
-                marker=dict(color="#93BE4D", line_color="#93BE4D", pattern_fillmode="replace")
+                marker=dict(color="#93BE4D", line_color="#93BE4D", pattern_fillmode="replace"),
+                showlegend=False
             )
         )
 
@@ -279,11 +280,16 @@ def show_result(result_df, data) :
                 y=labels,
                 width=0.4,
                 orientation='h',
-                marker_color=color
+                marker_color=color,
+                showlegend=False
             )
         )
 
-        fig3.update_layout(barmode="overlay", height=700, bargap=1, title="摂取栄養素グラフ", title_font_size=30)
+        fig3.update_layout(
+            autosize=True, barmode="overlay", height=700, bargap=1, title="摂取栄養素グラフ", title_font_size=30,
+        )
+        fig3.update_xaxes(fixedrange=True)
+        fig3.update_yaxes(fixedrange=True)
         st.plotly_chart(fig3)
 
 def get_foods(p) :
