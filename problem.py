@@ -1,19 +1,20 @@
-import sys
-sys.path.append('C:/Users/ajpjdm/AppData/Local/Programs/Python/Python312/Lib/site-packages')
-
 import pulp
 import pandas as pd
 
 class MenuProblem:
 
-    def __init__(self, place, target, allergy):
+    def __init__(self, place, max_price, target, allergy, wish_list, unwish_list):
         self.place = place
+        self.max_price = max_price
         self.target = target
         self.allergy = allergy
+        self.wish = wish_list
+        self.unwish = unwish_list
 
-        self.f_df = pd.read_csv("./foods.csv", encoding="utf-8_sig")
-        self.c_df = pd.read_csv("./categories.csv", encoding="utf-8_sig")
-        self.a_df = pd.read_csv("./allergy.csv", encoding="utf-8_sig")
+        self.f_df = pd.read_csv("./data/foods.csv", encoding="utf-8_sig")
+        self.c_df = pd.read_csv("./data/categories.csv", encoding="utf-8_sig")
+        self.a_df = pd.read_csv("./data/allergy.csv", encoding="utf-8_sig")
+        self.t_df = pd.read_csv("./data/target.csv", encoding="utf-8_sig")
 
         self.f_p_df = self.f_df[self.f_df.place==self.place]
 
@@ -22,9 +23,6 @@ class MenuProblem:
     def _formulate(self):
         INF = 1e9
 
-        # データ読み込み
-
-
         # データを設定
         C = self.c_df['c'].to_list()
         Max_c = {row.c:row.max for row in self.c_df.itertuples()}
@@ -32,8 +30,13 @@ class MenuProblem:
         F = self.f_p_df['f'].to_list()
         E_f = {row.f:row.energy for row in self.f_df.itertuples()}
 
+        T = self.t_df['t'].to_list()
+
         A = self.a_df.columns.tolist()
         A.pop(0)
+
+        W = self.f_p_df[self.f_p_df['name'].isin(self.wish)]['f'].to_list()
+        UW = self.f_p_df[self.f_p_df['name'].isin(self.unwish)]['f'].to_list()
 
         for f in F:
             if E_f[f] == -1:
@@ -55,7 +58,11 @@ class MenuProblem:
         prob = pulp.LpProblem('menu', pulp.LpMinimize)
 
         x = pulp.LpVariable.dicts('x', F, cat='Binary')
+        y = pulp.LpVariable.dicts('y', T, cat='Continunous')
         z = pulp.LpVariable('z', cat='Continunous')
+
+        under = pulp.LpVariable.dicts("under", T, lowBound=0, cat="Continuous")
+        over = pulp.LpVariable.dicts("over", T, lowBound=0, cat="Continuous")
 
         # 制約
         for c in C:
@@ -70,16 +77,39 @@ class MenuProblem:
             if self.allergy[a] == 0: continue
             prob += pulp.lpSum(x[f]*self.a_df[self.a_df.f==f][a].to_list()[0] for f in F) == 0
 
-        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) >= -z
-        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) <= z
+        for w in W:
+            prob += x[w] == 1
+
+        for uw in UW:
+            prob += x[uw] == 0
+
+        for t in self.t_df.itertuples():
+            ma = t.max
+            mi = t.min
+            ta = t.target
+            if ma == -1: ma = INF
+            if t.cal_percent_flag == 1: # タンパク質・脂質・炭水化物
+                prob += pulp.lpSum(x[f]*self.f_p_df[self.f_p_df.f==f][t.alias].to_list()[0] for f in F)*t.cal_per_g >= self.target*mi - under[t.t]
+                prob += pulp.lpSum(x[f]*self.f_p_df[self.f_p_df.f==f][t.alias].to_list()[0] for f in F)*t.cal_per_g <= self.target*ma + over[t.t]
+                prob += y[t.t]*self.target*ta == under[t.t]+over[t.t]
+            else: # それ以外
+                prob += pulp.lpSum(x[f]*self.f_p_df[self.f_p_df.f==f][t.alias].to_list()[0] for f in F) <= ma + over[t.t]
+                if mi == 0: 
+                    prob += under[t.t] == 0
+                else: 
+                    prob += pulp.lpSum(x[f]*self.f_p_df[self.f_p_df.f==f][t.alias].to_list()[0] for f in F) >= mi - under[t.t]
+                prob += y[t.t]*ta == under[t.t]+over[t.t]
+
+        prob += self.max_price >= pulp.lpSum(x[f]*self.f_p_df[self.f_p_df.f==f]['price'].to_list()[0] for f in F)
+
+        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) >= -z*self.target
+        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) <= z*self.target
         prob += z >= 0
 
-        prob += z <= self.target * 0.1
-
         # 目的関数
-        prob += z
+        prob += z + pulp.lpSum(y[t.t] for t in self.t_df.itertuples())
 
-        return {'prob': prob, 'variable': {'x': x}, 'list': {'F': F}}
+        return {'prob': prob, 'variable': {'x': x, 'y': y, 'z': z}, 'list': {'F': F}}
 
 
     def solve(self):
@@ -94,13 +124,36 @@ class MenuProblem:
 
         x = self.prob['variable']['x']
         F = self.prob['list']['F']
+        
+        score = {}
+
+        score['energy'] = {
+            'name': "エネルギー",
+            'score': self.prob['variable']['z'].value(),
+            'val': 0
+        }
+
+        for t in self.t_df.itertuples():
+            score[t.alias] = {
+                'name': t.name,
+                'score': self.prob['variable']['y'][t.t].value(),
+                'val': 0,
+                'target': t.target,
+                'min': t.min,
+                'max': t.max
+            }
 
         for f in F:
             if x[f].value() == 1:
                 mask.append(True)
+                d = self.f_p_df[self.f_p_df.f==f]
+                score['energy']['val'] += d['energy'].to_list()[0]
+                for t in self.t_df.itertuples():
+                    if t.cal_percent_flag == 1: score[t.alias]['val'] += d[t.alias].to_list()[0]*t.cal_per_g/self.target
+                    else: score[t.alias]['val'] += d[t.alias].to_list()[0]
             else:
                 mask.append(False)
 
         result_df = self.f_p_df[mask]
 
-        return status, result_df   
+        return status, result_df, score
