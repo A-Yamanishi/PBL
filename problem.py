@@ -140,7 +140,8 @@ class MenuProblem:
                 'val': 0,
                 'target': t.target,
                 'min': t.min,
-                'max': t.max
+                'max': t.max,
+                'delta': 0
             }
 
         for f in F:
@@ -149,10 +150,24 @@ class MenuProblem:
                 d = self.f_p_df[self.f_p_df.f==f]
                 score['energy']['val'] += d['energy'].to_list()[0]
                 for t in self.t_df.itertuples():
-                    if t.cal_percent_flag == 1: score[t.alias]['val'] += d[t.alias].to_list()[0]*t.cal_per_g/self.target
-                    else: score[t.alias]['val'] += d[t.alias].to_list()[0]
+                    score[t.alias]['val'] += d[t.alias].to_list()[0]
             else:
                 mask.append(False)
+
+        score['energy']['delta'] = score['energy']['val'] - self.target
+
+        for t in self.t_df.itertuples() :
+            a = 1
+            if t.cal_percent_flag == 1 : a = t.cal_per_g/self.target
+
+            score[t.alias]['val'] = score[t.alias]['val'] * a
+
+            if score[t.alias]['max'] < score[t.alias]['val'] and score[t.alias]['max'] != -1 :
+                score[t.alias]['delta'] = (score[t.alias]['val'] - score[t.alias]['max']) / a
+            elif score[t.alias]['val'] < score[t.alias]['min'] :
+                score[t.alias]['delta'] = (score[t.alias]['val'] - score[t.alias]['min']) /  a
+            
+
 
         result_df = self.f_p_df[mask]
 
