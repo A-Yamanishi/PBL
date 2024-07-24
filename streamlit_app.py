@@ -125,7 +125,7 @@ def show_result(result_df, data) :
         
     st.divider()
 
-    tab1, tab2, tab3 = st.tabs(["Values", "Score", "Graph"])
+    tab1, tab2, tab3 = st.tabs(["Values", "Scores", "Graph"])
 
     with tab1:
 
@@ -145,7 +145,8 @@ def show_result(result_df, data) :
                     values=result_df[k].to_list(),
                     hole=0.5,
                     marker_colors=px.colors.sequential.Emrld, 
-                    hoverinfo="label+percent+value"
+                    hoverinfo="label+percent+value",
+                    showlegend=False
                 )
             )
             fig.update_layout(
@@ -171,8 +172,8 @@ def show_result(result_df, data) :
         fig = go.Figure()
         fig.add_trace(go.Indicator(
             mode = "gauge+number",
-            value = total,
-            gauge = {'axis': {'range': [0, 1200]}},
+            value = total/12,
+            gauge = {'axis': {'range': [0, 100]}},
             gauge_bar_color=IN_COLOR,
             domain = {'x': [0, 1], 'y': [0, 1]}
         ))
@@ -188,17 +189,23 @@ def show_result(result_df, data) :
 
         st.divider()
 
-        score = {}
         i = 0
         col1, col2 = st.columns(2, gap="large", vertical_alignment="center")
+
         for name in data:
-            score[data[name]['name']] = (1-data[name]['score'])*100
             fig = go.Figure()
+            score = (1-data[name]['score'])*100
+
 
             fig.add_trace(go.Indicator(
-                mode = "gauge+number",
-                value = score[data[name]['name']],
+                mode = "gauge+number+delta",
+                value = score,
                 gauge = {'axis': {'range': [0, 100]}},
+                delta = {
+                    'reference': score - data[name]['delta'], 'suffix': ' ' + categories[name][1], 
+                    'increasing': {'color': OVER_COLOR, 'symbol': '+'},
+                    'decreasing': {'color': UNDER_COLOR, 'symbol': ''}
+                }, 
                 gauge_bar_color=IN_COLOR,
                 domain = {'x': [0, 1], 'y': [0, 1]},
                 number_font_size=60
@@ -218,6 +225,8 @@ def show_result(result_df, data) :
             else:
                 with col2: st.plotly_chart(fig)
             i+=1
+
+        st.divider()
 
     with tab3:
 
@@ -291,6 +300,8 @@ def show_result(result_df, data) :
         fig3.update_xaxes(fixedrange=True)
         fig3.update_yaxes(fixedrange=True)
         st.plotly_chart(fig3)
+
+        st.divider()
 
 def get_foods(p) :
     f_df = pd.read_csv("./data/foods.csv", encoding="utf-8_sig")
