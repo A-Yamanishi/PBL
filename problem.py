@@ -3,13 +3,13 @@ import pandas as pd
 
 class MenuProblem:
 
-    def __init__(self, place, max_price, target, allergy, wish_list, unwish_list):
+    def __init__(self, place, max_price, target, allergy, wish_list, unwanted_list):
         self.place = place
         self.max_price = max_price
         self.target = target
         self.allergy = allergy
         self.wish = wish_list
-        self.unwish = unwish_list
+        self.unwanted = unwanted_list
 
         self.f_df = pd.read_csv("./data/foods.csv", encoding="utf-8_sig")
         self.c_df = pd.read_csv("./data/categories.csv", encoding="utf-8_sig")
@@ -36,7 +36,7 @@ class MenuProblem:
         A.pop(0)
 
         W = self.f_p_df[self.f_p_df['name'].isin(self.wish)]['f'].to_list()
-        UW = self.f_p_df[self.f_p_df['name'].isin(self.unwish)]['f'].to_list()
+        UW = self.f_p_df[self.f_p_df['name'].isin(self.unwanted)]['f'].to_list()
 
         for f in F:
             if E_f[f] == -1:
@@ -102,12 +102,12 @@ class MenuProblem:
 
         prob += self.max_price >= pulp.lpSum(x[f]*self.f_p_df[self.f_p_df.f==f]['price'].to_list()[0] for f in F)
 
-        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) >= -z*self.target
-        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) <= z*self.target
+        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) >= -z
+        prob += self.target - pulp.lpSum(x[f]*E_f[f] for f in F) <= z
         prob += z >= 0
 
         # 目的関数
-        prob += z + pulp.lpSum(y[t.t] for t in self.t_df.itertuples())
+        prob += z + self.target * pulp.lpSum(y[t.t] for t in self.t_df.itertuples())
 
         return {'prob': prob, 'variable': {'x': x, 'y': y, 'z': z}, 'list': {'F': F}}
 
@@ -129,7 +129,7 @@ class MenuProblem:
 
         score['energy'] = {
             'name': "エネルギー",
-            'score': self.prob['variable']['z'].value(),
+            'score': self.prob['variable']['z'].value() / self.target,
             'val': 0
         }
 
